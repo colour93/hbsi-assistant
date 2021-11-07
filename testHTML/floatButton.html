@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    body {
+        margin: 0;
+    }
+    .bg {
+        height: 100vh;
+        width: 100vw;
+        background-color: blanchedalmond;
+    }
+
+    .float-btn {
+        position: absolute;
+        right: 40px;
+        top: 50vh;
+        
+        width: auto;
+        height: 48px;
+        color: #fff;
+        text-align: center;
+        cursor: pointer;
+        border-radius: 10px;
+        border: none;
+
+        padding: 0 10px 0 10px;
+
+        background-color: #237cec;
+        transition: all 0.25s;
+        color: #fff;
+    }
+
+    .float-btn:hover {
+        background-color: #1856a1;
+    }
+
+    .float-btn:disabled {
+        background-color: #1856a1;
+    }
+</style>
+<body>
+    <div class="bg"></div>
+    <button class="float-btn">测试</button>
+</body>
+</html>

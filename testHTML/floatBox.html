@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    body {
+        margin: 0;
+    }
+    .bg {
+        height: 100vh;
+        width: 100vw;
+        background-color: blanchedalmond;
+    }
+
+    .float-box {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        right: 40px;
+        margin-top: -150px;
+        top: 50%;
+
+        text-align: center;
+
+        background: #95a5a6;
+        border-radius: 10px;
+        padding: 10px;
+    }
+
+    .float-box-btn {
+        height: 32px;
+        color: #fff;
+        text-align: center;
+        cursor: pointer;
+        border-radius: 10px;
+        border: none;
+
+        margin: 10px 0 0px 0;
+
+        background-color: #237cec;
+        transition: all 0.25s;
+        color: #fff;
+    }
+
+    .float-box-btn:hover {
+        background-color: #1856a1;
+    }
+
+    .float-box-btn:disabled {
+        background-color: #1856a1;
+    }
+
+    #a-videoRate {
+        height: 14px;
+        width: 10px;
+    }
+</style>
+<body>
+    <div class="bg"></div>
+    <div class="float-box">
+        <p>工具箱</p>
+        <div class="float-checkbox">
+            <input type="checkbox" name="videoMute" id="a-videoMute" />视频静音<br/>
+        </div>
+        <div class="float-inputbox">
+            <input type="text" name="videoRate" id="a-videoRate" oninput = "value=value.replace(/[^\d]/g,'')"/>视频倍速<br/>
+        </div>
+        <button class="float-box-btn">保存</button>
+    </div>
+</body>
+</html>
