@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         HBSI助手
 // @namespace    https://assistant.hbsi.fur93.icu
-// @version      0.1.1109
-// @description  嗯
+// @version      0.2.1110
+// @description  嗯 
 // @author       玖叁 (colour93) <colour_93@furry.top>
 // @match        *://next.change.tm/*
 // @match        *://mooc.icve.com.cn/*
@@ -13,7 +13,7 @@
 // @require      https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js
 // @require      https://cdn.bootcdn.net/ajax/libs/axios/0.21.1/axios.min.js
 // @require      https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js
-// @resource     css  https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css
+// @resource css https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css
 // ==/UserScript==
 
 (async function() {
@@ -160,14 +160,17 @@
             // 初始化全局API地址
             const getViewDirectoryURL = "https://mooc.icve.com.cn/study/learn/viewDirectory";
             const getQuestionInfoURL = "https://mooc.icve.com.cn/study/learn/getQuestionInfo";
-
+            
             // 初始化全局变量
             let courseDetail;
             let loadingToast;
+            let switchStat;
+            let autoPlay;
 
             // 等待DOM载入
             window.onload = () => {
 
+                // console.log($('#olTempleteCellModul'))
 
                 // 挂载载入提示
                 $("body").append(`<div class="toast-container position-absolute bottom-0 end-0 p-3"><div class="toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true" id="toolBoxLoading" data-bs-autohide="false"><div class="d-flex"><div class="toast-body"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>                HBSI助手 - 职教云MOOC模块 载入中...</div></div></div></div>`)
@@ -193,7 +196,11 @@
             // 全局信息初始化函数
             function initialize () {
                 return new Promise (async (resolve, reject) => {
+
                     courseDetail = await getViewDirectory();
+
+                    switchStat = 0;
+
                     cate();
                 })
             }
@@ -208,8 +215,8 @@
                         videoInitialize();
                         break;
                 
-                    case 'ppt文档':
-                        pptInitialize();
+                    case "ppt": case "pdf文档": case "文档": case "office文档": case "ppt文档":
+                        docInitialize();
                     default:
                         break;
                 }
@@ -240,16 +247,14 @@
                 
                 // 初始化播放器对象
                 let player = top.jwplayer($(".jwplayer").attr("id"));
-
+                
                 // 初始化工具箱
                 toolBoxInitialize('video', {player});
-
-                // 初始化播放倍速
+                
+                // 初始化播放倍速&自动答题
+                let autoAnswer = parseInt(localStorage.getItem("[hbsiTB]autoAnswer"));
                 let playRate = parseInt(localStorage.getItem("[hbsiTB]playRate"));
                 player.setPlaybackRate(playRate);
-
-                console.log($("div.ui-dialog.ui-corner-all.ui-widget.ui-widget-content.ui-front.ui-dialog-buttons.ui-draggable"))
-
 
                 // 获取视频问题
                 if (courseDetail.videoQuestionList) {
@@ -294,6 +299,11 @@
                     // 用于监听视频暂停
                     player.on('pause', ()=>{
 
+                        // 判断是否开启自动答题
+                        if (!autoAnswer) {
+                            return;
+                        }
+
                         // 获取当前时间
                         let currentTime = parseInt(player.getCurrentTime());
 
@@ -319,19 +329,19 @@
                     // 用于监听视频是否播放完毕
                     player.on('complete', ()=>{
                         console.log("[HBSI助手] 视频播放完毕");
-
-                        // 跳转下一个
-                        $(".next.fr")[0].click();
+                        switchNextOne();
                     })
                 }
                 
             }
 
             // 文档类型初始化函数
-            function pptInitialize () {
+            function docInitialize () {
 
                 // 初始化工具箱
-                toolBoxInitialize('ppt');
+                console.log("[HBSI助手] 文档类型初始化");
+                toolBoxInitialize('doc');
+                switchNextOne();
             }
             
             // 初始化工具箱函数
@@ -344,8 +354,10 @@
                         // 视频工具箱
                         console.log("[HBSI助手] 视频工具箱初始化");
 
-                        // 播放倍速
+                        // 播放倍速&自动答题
+                        let {player} = options;
                         let playRate = parseInt(localStorage.getItem("[hbsiTB]playRate"));
+                        let autoAnswer = parseInt(localStorage.getItem("[hbsiTB]autoAnswer"));
 
                         // 判断是否已载入
                         if ($("#hbsi-toolBox")) {
@@ -361,7 +373,7 @@
                         ul.append(toolBoxA);
             
                         // 挂载工具箱modal
-                        let toolBoxModal = `<div class="modal fade" id="toolBoxModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="exampleModalLabel">工具箱设置</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body"><div class="playRate"><label for="playRateRange" class="form-label">播放倍速</label><span id="playRateRangeSpan"></span><input type="range" class="form-range" min="1" max="8" step="1" id="playRateRange" onchange="document.getElementById('playRateRangeSpan').innerHTML=value"></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button><button type="button" class="btn btn-primary" id="saveSettingsBtn" data-bs-dismiss="modal">确定</button></div></div></div></div>`;
+                        let toolBoxModal = `<div class="modal fade" id="toolBoxModal" tabindex="-1" aria-labelledby="toolBoxModalTitle" aria-hidden="true"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="toolBoxModalTitle">工具箱设置</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body"><div class="form-check"><input class="form-check-input" type="checkbox" value="" id="autoPlayCheck"><label class="form-check-label" for="autoPlayCheck">                      自动挂机</label></div><div class="form-check"><input class="form-check-input" type="checkbox" value="" id="autoAnswerCheck"><label class="form-check-label" for="autoAnswerCheck">                      自动答题</label></div><br><div class="playRate"><label for="playRateRange" class="form-label">播放倍速</label><span id="playRateRangeSpan"></span><input type="range" class="form-range" min="1" max="8" step="1" id="playRateRange" onchange="document.getElementById('playRateRangeSpan').innerHTML=value"></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button><button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="saveSettingsBtn">确定</button></div></div></div></div>`;
                         let body = $("body");
                         body.append(toolBoxModal);
 
@@ -370,10 +382,19 @@
                             playRate = player.getPlaybackRate();
                             localStorage.setItem("[hbsiTB]playRate",playRate);
                         };
+                        if(isNaN(autoAnswer)) {
+                            autoAnswer = 0;
+                            localStorage.setItem("[hbsiTB]autoAnswer",autoAnswer);
+                        };
+
+                        
 
                         // 初始化工具箱显示数值
-                        document.getElementById('playRateRangeSpan').innerHTML = playRate;
-                        document.getElementById('playRateRange').value = playRate;
+                        $('#playRateRangeSpan')[0].innerHTML = playRate;
+                        $('#playRateRange')[0].value = playRate;
+                        if (autoAnswer) {
+                            $('#autoAnswerCheck').prop('checked', 'checked');
+                        };
 
                         // 添加工具箱保存监听
                         document.getElementById('saveSettingsBtn').addEventListener('click',() => {
@@ -383,22 +404,130 @@
                             localStorage.setItem("[hbsiTB]playRate", playRate);
                             options.player.setPlaybackRate(playRate);
                             console.log(`[HBSI助手] ${playRate}倍速`);
+
+                            // 设置自动挂机
+                            console.log($('#autoPlayCheck').prop('checked'))
+                            if (!$('#autoPlayCheck').prop('checked')) {
+                                autoPlay = 0;
+                            } else {
+                                autoPlay = 1;
+                            };
+                            localStorage.setItem("[hbsiTB]autoPlay", autoPlay);
+                            console.log(`[HBSI助手] 自动挂机 ${autoPlay}`)
+                            
+                            // 设置自动答题
+                            if (!$('#autoAnswerCheck').prop('checked')) {
+                                autoAnswer = 0;
+                            } else {
+                                autoAnswer = 1;
+                            };
+                            localStorage.setItem("[hbsiTB]autoAnswer", autoAnswer);
+                            console.log(`[HBSI助手] 自动答题 ${autoAnswer}`)
+                            
                         })
 
                         break;
                     
-                    case 'ppt':
+                    case 'doc':
+
+                        console.log("[HBSI助手] 文档工具箱已载入")
                         
-                        // 清除工具箱
+                        // 判断是否已载入
                         if ($("#hbsi-toolBox")) {
                             $("#hbsi-toolBox").remove();
                         };
+
+                        // // 清除样式
+                        // $("ul#topDirectorUl").attr("style","float: left;margin-left: 60px;");
+
+                        // // 挂载工具箱按钮
+                        // let toolBoxA = `<li id="hbsi-toolBox"><a id="toolBoxA" data-bs-toggle="modal" data-bs-target="#toolBoxModal">工具箱</a></li>`;
+                        // let ul = $("ul.am-nav.am-nav-pills.am-topbar-right.admin-header-list");
+                        // ul.append(toolBoxA);
+            
+                        // // 挂载工具箱modal
+                        // let toolBoxModal = `<div class="modal fade" id="toolBoxModal" tabindex="-1" aria-labelledby="toolBoxModalTitle" aria-hidden="true"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="toolBoxModalTitle">工具箱设置</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body"><div class="form-check"><input class="form-check-input" type="checkbox" value="" id="autoPlayCheck"><label class="form-check-label" for="autoPlayCheck">                      自动挂机</label></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button><button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="saveSettingsBtn">确定</button></div></div></div></div>`;
+                        // let body = $("body");
+                        // body.append(toolBoxModal);
+
                 
                     default:
                         break;
                 }
+
+                // 读取参数
+                autoPlay = parseInt(localStorage.getItem("[hbsiTB]autoPlay"));
+
+                // 判断是否初次使用
+                if (isNaN(autoPlay)) {
+                    autoPlay = 0;
+                    localStorage.setItem("[hbsiTB]autoPlay", autoPlay);
+                }
+
+                // 初始化数值
+                if (autoPlay) {
+                    $('#autoPlayCheck').prop('checked', 'checked');
+                }
+            }
+
+            // 切换下一个函数
+            async function switchNextOne () {
+
+                // 判断是否正在切换 & 是否打开自动切换
+                if (switchStat || !autoPlay) {
+                    return;
+                };
+
+                switchStat = 1;
+                console.log("[HBSI助手] 正在切换下一个");
+
+                // 检查播放列表DOM是否渲染
+                if (!$('#olTempleteCellModul')[0].innerHTML) {
+
+                    _switchListner().then(()=>{
+                        $(".next.fr")[0].click();
+                    })
+
+                    function _switchListner () {
+                        return new Promise ( (resolve, reject) => {
+                            // 监听切换按钮是否渲染
+                            let switchListner = new MutationObserver(async()=>{
+                                console.log("[HSBI助手] 切换按钮DOM加载完毕");
+                                resolve(1);
+                            });
+                            switchListner.observe($("#olTempleteCellModul")[0], {
+                                childList: true
+                            });
+                        })
+                    }
+                } else {
+                    $(".next.fr")[0].click();
+                }
+                
             }
             
+        }
+
+        // ---------作业 模块---------
+        if (window.location.pathname == "/study/workExam/homeWork/preview.html") {
+
+            // 等待DOM加载
+            window.onload = () => {
+                initialize();
+            }
+
+            // 初始化
+            function initialize() {
+                uncageCopyLimit();
+            }
+
+            // 解除复制限制
+            function uncageCopyLimit() {
+                let arr = ["oncontextmenu", "ondragstart", "onselectstart", "onselect", "oncopy", "onbeforecopy"]
+                for (let i of arr)
+                    $(".hasNoLeft").attr(i, "return true")
+                console.log("[HBSI助手] 复制限制已解除")
+            }
         }
     }
 
